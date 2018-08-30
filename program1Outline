@@ -1,0 +1,82 @@
+Outline Solving AI Program 1: Due 9/16
+
+- Required Header:
+/*
+	University of Central Florida
+	CAP4630 - Fall 2018
+	Authors: Jimmy Seeber & Richard Snyder
+*/
+
+- Implement a Repetitive nearest neighbor algorithm (RNNA)
+- Branch to explore multiple possibilities whenever there is more than one closest neighbor.
+- Solve "tsp-tiny" in 27 moves
+- Solve "tsp-original-20" in 217 moves or fewer.
+- The javadocs folder contains the API documentation for the classes that you may need for writing your program efficiently. 
+- The lib folder contains PacSimLib.jar, which is the simulation engine that you will need for compiling and running your agent.
+- PacSimReplan.java is the simple replanning agent that is provided as a baseline for your development.
+- The file tsp-tiny.out is a text file that contains the required output format for an RNNA agent solving the tsp-tiny maze. 
+- To Compile the sample agent: javac -cp lib/PacSimLib.jar PacSimRNNA.java
+- To run the sample agent: java -cp .:lib/PacSimLib.jar PacSimRNNA tsp-tiny (mac)
+		java -cp .;lib/PacSimLib.jar PacSimRNNA tsp-tiny (Windows)
+- To create an executable JAR file from the command line: jar cfm PacSimRNNA.jar MANIFEST.MF *.class *.java
+- To run the executable JAR file against the tsp-tiny maze, enter: java -jar PacSimRNNA.jar tsp-tiny
+- Also, create an executable JAR file for my RNNA agent by editing the manifest file and changing the "Main-Class" property to name my agent's class
+		Suggested: PacSimRNNA
+		name of the file that contains this class must be called: PacSimRNNA.java
+		new line required after Main-Class name
+- Implementing the agent, key elements:
+	1. Implement the PacAction interface: the sim engine will know that your class contains the action() method.
+		action() is called every time Pac-Man moves one square in the maze.
+	2. Constructor: 
+		public PacSimRNNA( String fname ) {
+		 PacSim sim = new PacSim( fname );
+		 sim.init(this);
+		}
+	3. Main method: invoke the constructor using the passed-in maze name.
+		public static void main( String[] args ) { 
+		 new PacSimRNNA( args[ 0 ] );
+		}
+	4. Method init() : The GUI supports running your agent program multiple times. 
+		Use this method to reset any variables that must be re-initialized between runs.
+	5. Method action() :  You will probably also write a number of utility methods and even some additional classes to support what you do here, but this method will direct their operation.
+		(1) Compute the RNNA solution path through the input maze:
+			- Must do only once.
+			- Some kind of list member of the class (ex: List<Point> == null, by the init() method).
+			- After the solution path has been determined, this will be the list of all point locations on the solution path.
+			- Input to action() will be an Object that is a 2D array of PacCell cellss PacCell[][]
+			- Extract from this array: 1) starting location, 2) locations of all the food dots, 3) valid successors of a location by walls and !walls
+			- All cells in the input maze are PacCells, but instanceof && inheritance hierarchy tells which are wall cells, food cells, and Pac-Man
+				see diagram, EmptyCell == !(instanceof(PacmanCell) || instanceof(FoodCell) || instanceof(WallCell) )
+		(2) Determine the direction to move Pac-Man for the next move:
+			- Each move of a single cell will ask the agent class in what direction to move next, by calling action().
+			- Easy once the solution path, which is a combination of empty and food cells, has been determined.
+			- Just note Pac-Man's current position and the adjacent cell that is the next step in the solution. (NSEW - direction)
+			- Return the PacFace enum value corresponding to the determined direction. (a MUST by requirement of the action() method)
+			- Never return a PacFace value that is null, even in the first turn, Otherwise a step will be deducted from the solution path.
+- Required Program Output:
+		- Must present output to System.out in the format shown in the file tsp-tiny.out, which is the distribution.
+		- Output contains a number of sections. Most of the output should be generated prior to the first move
+		- Only the last section is generated line-by-line with each call to our agent's action() method, including the first.
+		1) Output header: Title, identification of algorithm, authors, and maze identification.
+		2) Cost table - An (n+1) by (n+1) symmetric matrix of UCS distances from Pac-Man's initial position to eat each food dot in the initial configuration.
+			n = number of food dots. (10 in tsp-tiny)
+			first row and column = PacMan's initial location. Use class BFSPath to generate the entries in this table. Values are the input data to the program.
+		3) Food array - a 1D array of the x-y locations of all the food dots in the initial configuration.
+			- movement: +x is right and +y is down.
+			- The array is zero based (from upper left of PacCell array), so there is an index shift of 1 when using these indices with the cost table.
+			- Ex: cost = 5 from Pac-Man's original position to the food array dot 0 may be found in the (0,1) entry in the cost table... assuming rows and cols are zero based.
+			- The entries in this array should be ordered according to increasing values of the x-value, and for each value of x according to increasing values of the y-value.
+		4) Population entries show that the candidate solutions at each step of the NNA algorithm.
+			- Since there are 10 food pellets in tsp-tiny, there are 10 steps in the algorithm.
+			- Since we're using RNNA, there are 10 candidate solutions for the first step, representing moving from PacMan's initial position to each of the food dots first. 
+			- Branching occurs at steps 2... by adding alternate solution paths to the population where there are multiple successors that are equally close to the current last location in one of the partial paths.
+			- Also note how each partial path entry reports its zero-based index, the total cost of the path so far, and a listing of the food dot locations in the current path.
+			- Additional note, that the number within a location's bracket is the cost (distance) from the previous location in the path (a marginal value), not the food mapping or the food array index value.
+		5) Time to generate plan - the time to generate the RNNA plan, wich is the minimal cost after all steps of the algorithm. 
+			- Use System.currentTimeMillis() to get long values at the start and end of the solution generation, and simply subtract (end - begin) to get the time value.
+		6) The words "Solution moves:" signals that the plan will now be followed.
+		7) The solution moves themselves. Each time your agents action() method is called, including the first time, when outputs 1-7 are also generated, the method should report how many times the method has been called.
+			- Pac-Man's current location and the PacFace enum direction that the method returns to the simulation for the move must follow the following format:
+				"1 : From [4,3] going N" - all this information must be show.
+		8) the statement: "Game over: Pacman has eaten all the food" is generated by the simulaton after the last food dot has been eaten.
+			- The action method should NOT output this statement.
