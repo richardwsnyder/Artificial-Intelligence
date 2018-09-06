@@ -33,7 +33,7 @@ public class PacSimRNNA implements PacAction {
    @Override
    public void init() {
       simTime = 0;
-      path = new ArrayList();
+      path = new ArrayList<>();
    }
 
    @Override
