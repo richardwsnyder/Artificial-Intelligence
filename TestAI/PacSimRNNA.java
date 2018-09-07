@@ -57,6 +57,7 @@ public class PacSimRNNA implements PacAction {
 
       if( path.isEmpty() ) {
          int[][] costTable = generateCostTable(grid, pc); 
+         List<Point> pellets = generateFoodTable(grid); 
       }
 
       // take the next step on the current path
@@ -103,4 +104,20 @@ public class PacSimRNNA implements PacAction {
 
       return costTable; 
    }
+
+   private List<Point> generateFoodTable(PacCell[][] g)
+   {
+      List<Point> food = PacUtils.findFood(g); 
+      int i, foodSize = food.size();
+
+      System.out.println("Food Array: \n"); 
+
+      for(i = 0; i < foodSize; i++)
+      {
+         System.out.println(i + " : (" + (int)food.get(i).getX() + "," + (int)food.get(i).getY() + ")"); 
+      }
+      System.out.println(); 
+
+      return food; 
+   }  
 }
