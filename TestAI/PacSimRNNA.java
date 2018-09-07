@@ -75,10 +75,13 @@ public class PacSimRNNA implements PacAction {
       List<Point> food = PacUtils.findFood(g); 
       int x, y, cost;
 
-      // table is size of food pellets + 1
+      // table is size of food pellets + 1 because you need the 
+      // diagonal of the matrix to be unused
       int tbSize = food.size() + 1; 
       int[][] costTable = new int[tbSize][tbSize]; 
 
+      // this loop will find the distance from the pacman starting 
+      // location to each food pellet 
       for(x = 1; x < tbSize; x++)
       {
          cost = BFSPath.getPath(g, p.getLoc(), food.get(x - 1)).size(); 
@@ -86,6 +89,7 @@ public class PacSimRNNA implements PacAction {
          costTable[x][0] = cost;
       }
 
+      // this loop will generat the cost of going from one food pellet to the next
       for(x = 1; x < tbSize; x++)
       {
          for(y = 1; y < tbSize; y++)
