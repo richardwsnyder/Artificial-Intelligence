@@ -54,7 +54,9 @@ public class PacSimRNNA implements PacAction {
       // if current path completed (or just starting out),
       // select a the nearest food using the city-block
       // measure and generate a path to that target
-
+      Point pacManLocation = new Point(); 
+      pacManLocation = pc.getLoc(); 
+      System.out.println("PacMan location (" + (int)pacManLocation.getX() + "," + (int)pacManLocation.getY() + ")"); 
       if( path.isEmpty() ) {
          int[][] costTable = generateCostTable(grid, pc); 
          List<Point> pellets = generateFoodTable(grid); 
