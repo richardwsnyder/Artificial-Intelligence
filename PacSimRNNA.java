@@ -47,9 +47,11 @@ public class PacSimRNNA implements PacAction {
    @Override
    public PacFace action( Object state ) {
 
+      int i = 0;
       PacCell[][] grid = (PacCell[][]) state;
       PacmanCell pc = PacUtils.findPacman(grid);
-
+      List<Point> possiblePath = new ArrayList<>();
+      ArrayList<List<Point>> allPaths = new ArrayList<List<Point>>(); 
       // check to see if there exists a PacMan in the game
       if( pc == null ) return null;
 
@@ -60,7 +62,12 @@ public class PacSimRNNA implements PacAction {
       if( path.isEmpty() ) {
          int[][] costTable = generateCostTable(grid, pc);
          List<Point> pellets = generateFoodTable(grid);
-         int[] orderOfFood = aSolPath(costTable);
+         int[] orderOfFood = aSolPath(costTable, possiblePath, pellets);
+         allPaths.add(possiblePath);
+         for(int j = 0; j < possiblePath.size(); j++)
+            path.add(possiblePath.get(j));  
+         possiblePath.clear(); 
+         i++; 
       }
 
       // take the next step on the current path
@@ -128,7 +135,7 @@ public class PacSimRNNA implements PacAction {
       return food;
    }
 
-   private int[] aSolPath(int[][] costTable){
+   private int[] aSolPath(int[][] costTable, List<Point> pathPoints, List<Point> foodTable){
      int idx=0, testVal=0, testIdx=0, minTotalCost=0, step=0, row=0, col=0, count=0;
      int n = costTable[0].length;
      int[] minVals = new int[n];
@@ -192,6 +199,19 @@ public class PacSimRNNA implements PacAction {
       showArray(minVals);
 
       System.out.print("\nThis solution can be solved with a cost of " + calcMinCost(minVals) + "\n\n");
+
+      int i;
+
+      System.out.println("This is the path PacMan will take: "); 
+      for(i = 1; i <= foodTable.size(); i++)
+      {
+          int j = minValIndexes[i]; 
+          // System.out.println("j is equal to: " + j); 
+          // System.out.println(foodTable.get(j - 1)); 
+          pathPoints.add(foodTable.get(j - 1)); 
+          System.out.print("(" + (int)pathPoints.get(i - 1).getX() + "," + (int)pathPoints.get(i - 1).getY() + ") ");
+      }
+      System.out.println(); 
 
       return minValIndexes;
 
