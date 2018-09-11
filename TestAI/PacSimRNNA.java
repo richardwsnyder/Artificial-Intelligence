@@ -18,6 +18,48 @@ import pacsim.PacmanCell;
  * RNNA Search Agent
  * @author Richard Snyder and Jimmy Seeber
  */
+
+public class path
+{
+   private int cost;
+   private List<Point> path;
+
+   public path()
+   {
+      cost = 0;
+      path = new ArrayList(); 
+
+      public void setCost(int cost)
+      {
+         this.cost = cost;
+      }
+
+      public int getCost()
+      {
+         return this.cost; 
+      }
+
+      public void addPoint(Point point)
+      {
+         this.path.add(point); 
+      }
+
+      public Point getPoint(int i)
+      {
+         return path.get(i); 
+      }
+
+      public List<Point> getPath()
+      {
+         return path;
+      }
+
+      public void setPath(List<Point> path)
+      {
+         this.path = path;
+      }
+   }
+}
 public class PacSimRNNA implements PacAction {
 
    private List<Point> path;
