@@ -60,7 +60,9 @@ public class PacSimRNNA implements PacAction {
       // if current path completed (or just starting out),
       // select a the nearest food using the city-block
       // measure and generate a path to that target
-
+      Long startTime = System.currentTimeMillis(); 
+      Long endTime;
+      int executionTime; 
       if( path.isEmpty() ) {
          int[][] costTable = generateCostTable(grid, pc);
          pellets = generateFoodTable(grid);
@@ -72,21 +74,24 @@ public class PacSimRNNA implements PacAction {
             path.add(possiblePath.get(j));
          }  
          possiblePath.clear();
-         
-         
+         endTime = System.currentTimeMillis(); 
+         executionTime = (int)(endTime - startTime); 
+         System.out.println("Time to generate plan: " + executionTime + " msec\n\nSolution moves:\n"); 
       }
+      
+      
       int size = path.size(); 
       for(int j = 0; j < size; j++)
       {
         if(pc.getX() == (int)path.get(j).getX() && pc.getY() == (int)path.get(j).getY())
         {
           path.remove(0);  
-          System.out.println("Removing stuff");
+          // System.out.println("Removing stuff");
           break; 
         }
       }
       List<Point> intermediatePath = BFSPath.getPath(grid, pc.getLoc(), path.get(0)); 
-      System.out.println(intermediatePath);
+      // System.out.println(intermediatePath);
       next = intermediatePath.get(0); 
       // take the next step on the current path 
       PacFace face = PacUtils.direction( pc.getLoc(), next );
