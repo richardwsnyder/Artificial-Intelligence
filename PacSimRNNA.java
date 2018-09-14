@@ -47,11 +47,13 @@ public class PacSimRNNA implements PacAction {
    @Override
    public PacFace action( Object state ) {
 
-      int i = 0;
+      int i = 0, k = 1;
       PacCell[][] grid = (PacCell[][]) state;
       PacmanCell pc = PacUtils.findPacman(grid);
       List<Point> possiblePath = new ArrayList<>();
       ArrayList<List<Point>> allPaths = new ArrayList<List<Point>>(); 
+      List<Point> pellets = new ArrayList<>(); 
+      Point next; 
       // check to see if there exists a PacMan in the game
       if( pc == null ) return null;
 
@@ -61,21 +63,39 @@ public class PacSimRNNA implements PacAction {
 
       if( path.isEmpty() ) {
          int[][] costTable = generateCostTable(grid, pc);
-         List<Point> pellets = generateFoodTable(grid);
+         pellets = generateFoodTable(grid);
          int[] orderOfFood = aSolPath(costTable, possiblePath, pellets);
          allPaths.add(possiblePath);
          for(int j = 0; j < possiblePath.size(); j++)
-            path.add(possiblePath.get(j));  
-         possiblePath.clear(); 
-         i++; 
+         {
+            // System.out.println("possiblePath at " + j + ": ()" + possiblePath.get(j)); 
+            path.add(possiblePath.get(j));
+         }  
+         possiblePath.clear();
+         
+         
       }
-
-      // take the next step on the current path
-
-      Point next = path.remove( 0 );
+      int size = path.size(); 
+      for(int j = 0; j < size; j++)
+      {
+        if(pc.getX() == (int)path.get(j).getX() && pc.getY() == (int)path.get(j).getY())
+        {
+          path.remove(0);  
+          System.out.println("Removing stuff");
+          break; 
+        }
+      }
+      List<Point> intermediatePath = BFSPath.getPath(grid, pc.getLoc(), path.get(0)); 
+      System.out.println(intermediatePath);
+      next = intermediatePath.get(0); 
+      // take the next step on the current path 
       PacFace face = PacUtils.direction( pc.getLoc(), next );
       System.out.printf( "%5d : From [ %2d, %2d ] go %s%n",
             ++simTime, pc.getLoc().x, pc.getLoc().y, face );
+      
+
+
+      
       return face;
    }
 
