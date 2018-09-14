@@ -51,18 +51,18 @@ public class PacSimRNNA implements PacAction {
       PacCell[][] grid = (PacCell[][]) state;
       PacmanCell pc = PacUtils.findPacman(grid);
       List<Point> possiblePath = new ArrayList<>();
-      ArrayList<List<Point>> allPaths = new ArrayList<List<Point>>(); 
-      List<Point> pellets = new ArrayList<>(); 
-      Point next; 
+      ArrayList<List<Point>> allPaths = new ArrayList<List<Point>>();
+      List<Point> pellets = new ArrayList<>();
+      Point next;
       // check to see if there exists a PacMan in the game
       if( pc == null ) return null;
 
       // if current path completed (or just starting out),
       // select a the nearest food using the city-block
       // measure and generate a path to that target
-      Long startTime = System.currentTimeMillis(); 
+      Long startTime = System.currentTimeMillis();
       Long endTime;
-      int executionTime; 
+      int executionTime;
       if( path.isEmpty() ) {
          int[][] costTable = generateCostTable(grid, pc);
          pellets = generateFoodTable(grid);
@@ -70,37 +70,37 @@ public class PacSimRNNA implements PacAction {
          allPaths.add(possiblePath);
          for(int j = 0; j < possiblePath.size(); j++)
          {
-            // System.out.println("possiblePath at " + j + ": ()" + possiblePath.get(j)); 
+            // System.out.println("possiblePath at " + j + ": ()" + possiblePath.get(j));
             path.add(possiblePath.get(j));
-         }  
+         }
          possiblePath.clear();
-         endTime = System.currentTimeMillis(); 
-         executionTime = (int)(endTime - startTime); 
-         System.out.println("Time to generate plan: " + executionTime + " msec\n\nSolution moves:\n"); 
+         endTime = System.currentTimeMillis();
+         executionTime = (int)(endTime - startTime);
+         System.out.println("Time to generate plan: " + executionTime + " msec\n\nSolution moves:\n");
       }
-      
-      
-      int size = path.size(); 
+
+
+      int size = path.size();
       for(int j = 0; j < size; j++)
       {
         if(pc.getX() == (int)path.get(j).getX() && pc.getY() == (int)path.get(j).getY())
         {
-          path.remove(0);  
+          path.remove(0);
           // System.out.println("Removing stuff");
-          break; 
+          break;
         }
       }
-      List<Point> intermediatePath = BFSPath.getPath(grid, pc.getLoc(), path.get(0)); 
+      List<Point> intermediatePath = BFSPath.getPath(grid, pc.getLoc(), path.get(0));
       // System.out.println(intermediatePath);
-      next = intermediatePath.get(0); 
-      // take the next step on the current path 
+      next = intermediatePath.get(0);
+      // take the next step on the current path
       PacFace face = PacUtils.direction( pc.getLoc(), next );
       System.out.printf( "%5d : From [ %2d, %2d ] go %s%n",
             ++simTime, pc.getLoc().x, pc.getLoc().y, face );
-      
 
 
-      
+
+
       return face;
    }
 
@@ -188,6 +188,15 @@ public class PacSimRNNA implements PacAction {
           step = minValIndexes[idx-1]*n;
           //Remove: Test print:
           // System.out.println(" \t\t\t" +  minValIndexes[idx-1] + " " + n + " \t\t" + step );
+
+          if(step%n == minValIndexes[idx]){
+              ;
+          }else{
+              solIndexes.add(minValIndexes, minVals);
+
+              branches++;
+              System.out.println(step%n + " " + minValIndexes[idx] + ": " + branches);
+          }
         }
 
         //convert from a linear to a 2D traversal style
@@ -227,16 +236,16 @@ public class PacSimRNNA implements PacAction {
 
       int i;
 
-      System.out.println("This is the path PacMan will take: "); 
+      System.out.println("This is the path PacMan will take: ");
       for(i = 1; i <= foodTable.size(); i++)
       {
-          int j = minValIndexes[i]; 
-          // System.out.println("j is equal to: " + j); 
-          // System.out.println(foodTable.get(j - 1)); 
-          pathPoints.add(foodTable.get(j - 1)); 
+          int j = minValIndexes[i];
+          // System.out.println("j is equal to: " + j);
+          // System.out.println(foodTable.get(j - 1));
+          pathPoints.add(foodTable.get(j - 1));
           System.out.print("(" + (int)pathPoints.get(i - 1).getX() + "," + (int)pathPoints.get(i - 1).getY() + ") ");
       }
-      System.out.println(); 
+      System.out.println();
 
       return minValIndexes;
 
