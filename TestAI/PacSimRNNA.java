@@ -161,7 +161,7 @@ public class PacSimRNNA implements PacAction {
    }
 
    private int[] aSolPath(int[][] costTable, List<Point> pathPoints, List<Point> foodTable){
-     int idx=0, testVal=0, testIdx=0, minTotalCost=0, step=0, row=0, col=0, count=0;
+     int idx=0, i=0, testVal=0, testIdx=0, minTotalCost=0, step=0, row=0, col=0, count=0;
      int n = costTable[0].length;
      int[] minVals = new int[n];
      int[] minValIndexes = new int[n];
@@ -184,18 +184,31 @@ public class PacSimRNNA implements PacAction {
 
         //Before searching the next row, finish end of row procedures
         if(count != 0 && count%n == 0){
-          validSearchSpace = reduceSearchSpace(validSearchSpace, minValIndexes, idx, n);
-          //locate the next cell location to start traversing the row
-          idx++;
-          step = minValIndexes[idx-1]*n;
-          //Remove: Test print:
-          // System.out.println(" \t\t\t" +  minValIndexes[idx-1] + " " + (step%n) );
-          if(step%n == minValIndexes[idx-1]){
-              ;
-          }else{
-              branches++;
-              System.out.println(step%n + " " + minValIndexes[idx-1] + ": " + branches);
-          }
+            //Branch implementation: Re-evaluate the entire row with the least cost val
+            i=0;
+            while(i < n){
+                step--;
+                row = step/n;
+                col = step%n;
+
+                //When re-traversing the row, log each branch in the arrayList
+                if(minVals[idx] == costTable[row][col] ){
+                    if(step%n == minValIndexes[idx]){
+                        ;
+                    }else{
+                        branches++;
+                        System.out.println(step%n + " " + minValIndexes[idx] + ": " + branches);
+                    }
+                }
+                i++;
+            }
+            step += n;
+            validSearchSpace = reduceSearchSpace(validSearchSpace, minValIndexes, idx, n);
+            //locate the next cell location to start traversing the row
+            idx++;
+            step = minValIndexes[idx-1]*n;
+            //Remove: Test print:
+            // System.out.println(" \t\t\t" +  minValIndexes[idx-1] + " " + (step%n) );
 
         }
 
@@ -233,8 +246,6 @@ public class PacSimRNNA implements PacAction {
       showArray(minVals);
 
       System.out.print("\nThis solution can be solved with a cost of " + calcMinCost(minVals) + "\n\n");
-
-      int i;
 
       System.out.println("This is the path PacMan will take: ");
       for(i = 1; i <= foodTable.size(); i++)
