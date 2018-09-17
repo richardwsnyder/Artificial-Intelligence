@@ -22,13 +22,13 @@ import pacsim.PacmanCell;
  * @author Richard Snyder and Jimmy Seeber
  */
 
-class PopulationEntry
+class Path
 {
     private int cost; 
     private String pathStr; 
     private List<Point> path; 
     
-    public PopulationEntry()
+    public Path()
     {
       cost = 0; 
       pathStr = "";
@@ -110,39 +110,50 @@ public class PacSimRNNA implements PacAction {
       int i = 0, k = 1;
       PacCell[][] grid = (PacCell[][]) state;
       PacmanCell pc = PacUtils.findPacman(grid);
+      // this is where the final path will be saved based off of the lowest cost
       List<Point> possiblePath = new ArrayList<>();
-      ArrayList<List<Point>> allPaths = new ArrayList<List<Point>>();
       List<Point> pellets = new ArrayList<>();
+      // where is PacMan going next? 
       Point next;
-      PopulationEntry var;
+      // variable to save the return value from generatePath
+      Path var;
       // check to see if there exists a PacMan in the game
-      if( pc == null ) return null;
+      if( pc == null ) 
+        return null;
 
-      // if current path completed (or just starting out),
-      // select a the nearest food using the city-block
-      // measure and generate a path to that target
       Long startTime = System.currentTimeMillis();
       Long endTime;
       int executionTime;
+      
       if( path.isEmpty() ) {
-         //System.out.println("PacMan starting location" + pc);
+         // generate cost table
          int[][] costTable = generateCostTable(grid, pc);
+         // find all the food pellets
          pellets = generateFoodTable(grid);
-         // int[] orderOfFood = searchAllPaths(costTable, possiblePath, pellets);
+         //generate all of the possible paths, return 
+         // the best one
          var = generatePath(costTable, pellets, pc, grid);
+         // save path from best path to new variable
+         // that is list of Points
          possiblePath = var.getPath();  
+
+         // add path Points to member variable
          for(int j = 0; j < possiblePath.size(); j++)
          {
             // System.out.println("possiblePath at " + j + ": ()" + possiblePath.get(j));
             path.add(possiblePath.get(j));
          }
+
          possiblePath.clear();
          endTime = System.currentTimeMillis();
          executionTime = (int)(endTime - startTime);
          System.out.println("Time to generate plan: " + executionTime + " msec\n\nSolution moves:\n");
       }
 
-
+      // if we run across a pellet and eat it, in order 
+      // to prevent thrashing back to that spot in our 
+      // intermediate path, remove it from the pellets 
+      // list
       int size = path.size();
       for(int j = 0; j < size; j++)
       {
@@ -154,25 +165,17 @@ public class PacSimRNNA implements PacAction {
         }
       }
 
-      /*for(int j = 0; j < path.size(); j++)
-      {
-            System.out.println("path at " + j + ": ()" + path.get(j));
-      }*/
-      // System.out.println("path.get(0)"); 
-      // System.out.println(path.get(0)); 
-      // System.out.println("intermediatePath"); 
-      // System.out.println(BFSPath.getPath(grid, pc.getLoc(), path.get(0)) + " " + BFSPath.getPath(grid, pc.getLoc(), path.get(0)).size()); 
+      // create an intermediate path from PacMan's current location
+      // to the next closest food pellet in the list 
       List<Point> intermediatePath = BFSPath.getPath(grid, pc.getLoc(), path.get(0));
-      // System.out.println(intermediatePath);
-      // System.out.println(intermediatePath.get(0)); 
+      
+      // assign PacMan's next location to the BFSPath
+      // next value
       next = intermediatePath.get(0);
-      // take the next step on the current path
+
       PacFace face = PacUtils.direction( pc.getLoc(), next );
       System.out.printf( "%5d : From [ %2d, %2d ] go %s%n",
             ++simTime, pc.getLoc().x, pc.getLoc().y, face );
-
-
-
 
       return face;
    }
@@ -197,13 +200,14 @@ public class PacSimRNNA implements PacAction {
          costTable[x][0] = cost;
       }
 
-      // this loop will generat the cost of going from one food pellet to the next
+      // this loop will generate the cost of going from one food pellet to the next
       for(x = 1; x < tbSize; x++)
       {
          for(y = 1; y < tbSize; y++)
             costTable[x][y] = BFSPath.getPath(g, food.get(x - 1), food.get(y - 1)).size();
       }
 
+      // print cost table
       System.out.println("Cost Table:\n");
       for(x = 0; x < tbSize; x++)
       {
@@ -217,6 +221,8 @@ public class PacSimRNNA implements PacAction {
       return costTable;
    }
 
+   // very trivial method considering the PacUtils 
+   // will return all of the points of the food pellets
    private List<Point> generateFoodTable(PacCell[][] g)
    {
       List<Point> food = PacUtils.findFood(g);
@@ -233,80 +239,97 @@ public class PacSimRNNA implements PacAction {
       return food;
    }
 
-   private PopulationEntry generatePath(int[][] costTable, List<Point> pellets, PacmanCell pc, PacCell[][] grid)
+   private Path generatePath(int[][] costTable, List<Point> pellets, PacmanCell pc, PacCell[][] grid)
    {
-      int population = 0, cost = 0, previousCost =0; 
-      String pathStr = "";
+      // save the previous cost so that you can 
+      // just add the newly computed cost
+      int val = 0, cost = 0, previousCost =0; 
+      String pathString  = "";
       Point pacManLoc = new Point(); 
       Point currentFood; 
-      List<PopulationEntry> populationList = new ArrayList<>();
+      // this will hold all of the possible paths 
+      // that PacMan can take. There are a minimum of 
+      // n paths, where n is the number of food pellets.
+      // However, due to possible branching, there could be more paths.
+      // Otherwise, we'd just put them in an array of size n. 
+      List<Path> pathList = new ArrayList<>();
+      // save the previous path so that we can 
+      // concatenate the next point onto the path
+      // after calculating it.
       List<Point> previousPath = new ArrayList<>();
+      // save a list of the closest pellets to PacMan
       ArrayList<Point> closestPellets = new ArrayList<Point>();
+      // save a copy of the path list so that you 
+      // can easily add branches
+      List<Path> pathListCopy = new ArrayList<>();
 
-      List<PopulationEntry> popListCopy = new ArrayList<>();
 
-      long start = System.currentTimeMillis();  
-      // Calculate each step in the algorithm 
+      // you're guranteed that you only need to run
+      // this loop n times becuase you can only collect
+      // n pellets
       for(int i = 0; i < pellets.size(); i++)
       {
         System.out.println("Population at step " + (i+1) + ":");
-        population = 0; 
+        val = 0; 
         cost = 0;
         
-        int capacity = (populationList.size() > pellets.size()) ? populationList.size() : pellets.size();
+        // capacity is a variable that stores the size of pathList.
+        // it can either be n, or it can be n + the number of branches.
+        int capacity = (pathList.size() > pellets.size()) ? pathList.size() : pellets.size();
         for (int j = 0; j < capacity; j++)
         {
           String previousPathStr = "";  
-          // If we're in the first step, then instantiate 
-          // each population entry and add them to the list
           
+          // If we're in the first step, then instantiate 
+          // each population entry and add them to the list        
           if (i == 0)
           {
-            PopulationEntry p = new PopulationEntry(); 
-            populationList.add(p); 
+            Path p = new Path(); 
+            pathList.add(p); 
             pacManLoc = pc.getLoc(); 
             currentFood = pellets.get(j);
           }
           else
           {
-
+            // clear the previously closest pellets
             closestPellets.clear();
 
-            // System.out.println("i: " + i + "  j: " + j);
-            pacManLoc = populationList.get(j).getPoint(i-1);
+            pacManLoc = pathList.get(j).getPoint(i-1);
             
-            // Get available food pellets closest to last simulated PacMan location. Branch if more than one available
-            closestPellets = getClosestPellets(populationList.get(j), pellets, costTable, pacManLoc);
+            // Get available food pellets closest to last simulated PacMan location. 
+            // Branch if more than one available
+            closestPellets = getClosestPellets(pathList.get(j), pellets, costTable, pacManLoc);
             currentFood = closestPellets.get(0);
   
           }
-          previousPathStr = populationList.get(j).getPathStr();
-          previousPath = populationList.get(j).getPath();
-          previousCost = populationList.get(j).getCost();
+          // copy all of the previous values
+          previousPathStr = pathList.get(j).getPathStr();
+          previousPath = pathList.get(j).getPath();
+          previousCost = pathList.get(j).getCost();
+
           // Calculate the cost from pacman's current location to get current food 
           cost = BFSPath.getPath(grid, pacManLoc, currentFood).size();            
           
           // Set the cost for that particular population entry 
-          populationList.get(j).setCost(populationList.get(j).getCost() + cost);
+          pathList.get(j).setCost(pathList.get(j).getCost() + cost);
           
-          //System.out.println("Distance between " + pacManLoc + " and " + currentFood + " is " + populationList.get(j).getCost());
-
           // Add new food pellet in point format to and set new cost
-          populationList.get(j).addPoint(currentFood);
+          pathList.get(j).addPoint(currentFood);
 
           // Get the path in a string format
-          pathStr = "[("+ (int)currentFood.getX() + "," + (int)currentFood.getY() +
-              ")," + cost + "]";
-          populationList.get(j).setPathStr(previousPathStr + pathStr);
+          pathString = "[("+ (int)currentFood.getX() + "," + (int)currentFood.getY() + ")," + cost + "]";
+          pathList.get(j).setPathStr(previousPathStr + pathString);
 
         }
 
-        popListCopy = populationList; 
-        Collections.sort(popListCopy, new Comparator<PopulationEntry>()
+        // copy list so that you can sort using the Collections Library
+        // using lamba functions
+        pathListCopy = pathList; 
+        Collections.sort(pathListCopy, new Comparator<Path>()
         {
 
           @Override
-          public int compare(PopulationEntry o1, PopulationEntry o2) {
+          public int compare(Path o1, Path o2) {
             if(o1.getCost() > o2.getCost())
             {
               return 1;
@@ -323,43 +346,61 @@ public class PacSimRNNA implements PacAction {
           
         });
         
-        for (int j = 0 ; j < popListCopy.size(); j++)
+        // print out the population costs 
+        for (int j = 0 ; j < pathListCopy.size(); j++)
         {
-          System.out.println(population + " : cost="+ popListCopy.get(j).getCost() + " : " +
-              popListCopy.get(j).getPathStr());
-          population++;
+          System.out.println(val + " : cost="+ pathListCopy.get(j).getCost() + " : " +
+              pathListCopy.get(j).getPathStr());
+          val++;
         }
       }
+        // return the lowest cost path at the very
+        // end of the calculations
+        return pathListCopy.get(0); 
+    }
 
-        return popListCopy.get(0); 
-      }
-
-      private ArrayList<Point> getClosestPellets(PopulationEntry currentPath, List<Point> foodPellets, int[][] costTable, Point pacmanLoc){
+      private ArrayList<Point> getClosestPellets(Path currentPath, List<Point> pellets, int[][] costTable, Point pacmanLoc){
     
-        //System.out.println("Looking at: (" + pacmanLoc.getX() + ", " + pacmanLoc.getY() + ")");
+        // initialize minDistance to max value so that any pellets on board 
+        // will set a new min value
         int minDistance = Integer.MAX_VALUE;
 
-        // Figure out pacmanLoc index
-        int indexOfPacman = foodPellets.indexOf(pacmanLoc) + 1;
+        // Figure out PacMan's index based on the 
+        // food pellet that he is currently at
+        int idx = pellets.indexOf(pacmanLoc) + 1;
         
         // Keep track of points with least distance
         ArrayList<Point> chosenPoints = new ArrayList<Point>();
 
-        for(int x = 0; x < foodPellets.size(); x++){
-          //if((int)pacmanLoc.getX() == 3)
-          //  System.out.println("Checking Food: (" + foodPellets.get(x).getX() + ", " + foodPellets.get(x).getY() + ")");
-          if(!(currentPath.getPath().contains(foodPellets.get(x)))){
-            //System.out.println("Distance to pellet " + x + " is " + costTable[x + 1][indexOfPacman]);
-            if((x + 1) != indexOfPacman && costTable[x + 1][indexOfPacman] < minDistance){
+        // for all remaining pellets, find the nearest one
+        for(int x = 0; x < pellets.size(); x++)
+        {
+          // as long as the pellet hasn't been removed from the
+          // game board yet
+          if(!(currentPath.getPath().contains(pellets.get(x))))
+          {
+            if((x + 1) != idx && costTable[x + 1][idx] < minDistance)
+            {
               chosenPoints.clear();
-              chosenPoints.add(foodPellets.get(x));
-              minDistance = costTable[x + 1][indexOfPacman];
-            }else if(costTable[x + 1][indexOfPacman] == minDistance){
-              chosenPoints.add(foodPellets.get(x));
+              chosenPoints.add(pellets.get(x));
+              // set the min distance to the value of the cost
+              // table, which will then be added to the 
+              // cost of the path back in generatePaths()
+              minDistance = costTable[x + 1][idx];
+            }
+            // if the min distance is equal to the cost at the
+            // costTable, add a point, which will then generate a branch
+            // in generatePaths()
+            else if(costTable[x + 1][idx] == minDistance)
+            {
+              chosenPoints.add(pellets.get(x));
             }
           } 
         }
-        //System.out.println(chosenPoint.getX() + ", " + chosenPoint.getY());
+        
+        // return the list of Points that are the closest
+        // to Pacman. If there is more than one, generatePaths()
+        // will create a branch of that path with the next value
         return chosenPoints;
       }
 }
