@@ -165,6 +165,7 @@ class Tree
         int value;
         if (depth == 0 || n.children.size() == 0)
             return n.data;
+        
         if (max)
         {   
             value = Integer.MIN_VALUE;
@@ -267,46 +268,34 @@ class Tree
         int depth;
         List<Node> copyList = new ArrayList<Node>(); 
 
-        for(a = 0; a < depth; a++)
+        for(i = 0; i < size; i++)
         {
-            if(a == 0)
-            {
-                p = getPManMoves(pc);
-            }
-            for(i = 0; i < size; i++)
-            {
-                Point point = p.possibleMoves.get(i);
-                if (a >= 1)
-                {
-                    Node n = new Node();
-                    n = copyList.remove(0)
-                }
-                Node n = new Node();
-                n.pm.addPoint(point);
-                t.insertNode(t.root, n);
-                Adversary adv1 = new Adversary();
-                adv1 = getAdversaryMoves(advs.get(0));
-                Adversary adv2 = new Adversary();
-                adv2 = getAdversaryMoves(advs.get(1));
+            Point point = p.possibleMoves.get(i);
+            Node n = new Node();
+            n.pm.addPoint(point);
+            t.insertNode(t.root, n);
+            Adversary adv1 = new Adversary();
+            adv1 = getAdversaryMoves(advs.get(0));
+            Adversary adv2 = new Adversary();
+            adv2 = getAdversaryMoves(advs.get(1));
 
-                for(j = 0; j < adv1.getNumPossibilities(); j++)
+            for(j = 0; j < adv1.getNumPossibilities(); j++)
+            {
+                for(k = 0; k < adv2.getNumPossibilities(); k++)
                 {
-                    for(k = 0; k < adv2.getNumPossibilities(); k++)
+                    Point adv1Move = adv1.possibleMoves.get(j);
+                    Point adv2Move = adv2.possibleMoves.get(k);
+                    Node m = new Node();
+                    m.adv1.path.add(adv1Move);
+                    m.adv2.path.add(adv2Move);
+                    for(l = 0; l < n.pm.path.size(); l++)
                     {
-                        Point adv1Move = adv1.possibleMoves.get(j);
-                        Point adv2Move = adv2.possibleMoves.get(k);
-                        Node m = new Node();
-                        m.adv1.path.add(adv1Move);
-                        m.adv2.path.add(adv2Move);
-                        for(l = 0; l < n.pm.path.size(); l++)
-                        {
-                            m.pm.path.add(n.pm.path.get(l));
-                        }
-                        int random = (int)(Math.random() * range) + min;
-                        System.out.println(random);
-                        m.setData(random);
-                        t.insertNode(n, m);
+                        m.pm.path.add(n.pm.path.get(l));
                     }
+                    int random = (int)(Math.random() * range) + min;
+                    System.out.println(random);
+                    m.setData(random);
+                    t.insertNode(n, m);
                 }
             }
         }
