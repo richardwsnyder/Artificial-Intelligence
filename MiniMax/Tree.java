@@ -300,6 +300,12 @@ class Tree
             }
         }
 
+        int canGetFood == 0/1
+        int distFromNearestGhost = [0, 100]
+
+
+        sum = (canGetFood * 1) + (distFromNearestGhost * -3) + (isInTunnel * -10); 
+
 
         int alpha = Integer.MIN_VALUE, beta = Integer.MAX_VALUE;
         t.printTree(t.root);
@@ -309,5 +315,3 @@ class Tree
 
     }
 }
-
-
