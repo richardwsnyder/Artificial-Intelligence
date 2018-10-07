@@ -327,63 +327,50 @@ class Tree
     private static int eval(Point pm, Point adv1, Point adv2, PacCell[][] grid, List<Point> esc)
     {
     	int d1 = Integer.MAX_VALUE, d2 = Integer.MAX_VALUE, value = 0;
-    	int dist1 = PacUtils.manhattanDistance(pm, adv1);
-    	int dist2 = PacUtils.manhattanDistance(pm, adv2);
+    	int dist1 = BFSPath.getPath(grid, pm, adv1).size();
+    	int dist2 = BFSPath.getPath(grid, pm, adv2).size();
         int distFromEscapePoint = Integer.MAX_VALUE;
         int distance;
         int idxpm = 0, idxadv1 = 0, idxadv2 = 0;
 
-        for(int i = 0; i < esc.size(); i++)
-        {
-            distance = PacUtils.manhattanDistance(pm, esc.get(i)); 
-            if(distance < distFromEscapePoint)
-            {
-                distFromEscapePoint = distance;
-                idxpm = i;
-            }
-        }
-
-        for(int i = 0; i < esc.size(); i++)
-        {
-            distance = PacUtils.manhattanDistance(adv1, esc.get(i)); 
-            if(distance < d1)
-            {
-                d1 = distance;
-                idxadv1 = i;
-            }
-        }
-        // System.out.println("d1 is this: " + d1);
-
-        for(int i = 0; i < esc.size(); i++)
-        {
-            distance = PacUtils.manhattanDistance(adv2, esc.get(i)); 
-            if(distance < d2)
-            {
-                d2 = distance;
-                idxadv2 = i;
-            }
-        }
-
         // System.out.println("d2 is this: " + d2);
 
-    	List<Point> food = PacUtils.findFood(grid); 
+    	List<Point> food = PacUtils.findFood(grid);
+
     	if(food.contains(pm))
     	{
+    		// System.out.println(food);
     		value += 1; 
     	}
 
+
+
     	if(dist1 < 3 || dist2 < 3) {
     		value = -1;
-    	} else if((dist1 < (2*distFromEscapePoint) + 1 && dist1 > 2 && idxpm == idxadv1) || (dist2 < (2*distFromEscapePoint) + 1 && dist2 > 2 && idxpm == idxadv2)){
-            value += 3;
-        } else if(((dist1 == (2*distFromEscapePoint) + 2) && idxpm == idxadv1) 
-            || ((dist1 == (2*distFromEscapePoint) + 1) && idxpm == idxadv1) 
-            || ((dist2 == (2*distFromEscapePoint) + 2) && idxpm == idxadv2) 
-            || ((dist2 == (2*distFromEscapePoint) + 1) && idxadv2 == idxpm)) {
+    	} else if((dist1 < 5 && dist1 > 2) || (dist2 < 5 && dist2 > 2)){
+    		value += 3;
+        } else if(dist1 == 5 || dist2 == 5) {
             value += 5;
         } else {
             value += 10;
         }
+
+    	return value;
+    }
+
+    public int closestFood(PacCell grid[][], Point pm)
+    {
+    	List<Point> food = PacUtils.findFood(grid);
+    	int distance;
+    	int value = Integer.MAX_VALUE;
+    	for(int i = 0; i < food.size(); i++)
+    	{
+    		distance = BFSPath.getPath(grid, food.get(i), pm).size();
+    		if(distance < value)
+    		{
+    			value = distance;
+    		}
+    	}
 
     	return value;
     }
@@ -404,7 +391,7 @@ class Tree
         {
             Point point = p.possibleMoves.get(i);
             // int nrandom = (int)(Math.random() * 10) + 1; 
-            Node n = new Node();
+            Node n = new Node(); 
             if(root != this.root)
             {
                 for(l = 0; l < root.pm.path.size(); l++)
@@ -416,6 +403,8 @@ class Tree
             }
             // System.out.println("This is n.pm.path before addPoint(): " + n.pm.path);
             n.pm.addPoint(point);
+            n.setData(root.data + closestFood(grid, point)); 
+            // System.out.println("This is n.data" + n.data);
             // System.out.println("This is n.pm.path after addPoint(): " + n.pm.path);
             this.insertNode(root, n);
             Adversary adv1 = new Adversary();
@@ -436,9 +425,11 @@ class Tree
 
                     m.adv1.path.add(adv1Move);
                     m.adv2.path.add(adv2Move);
+                    m.setData(n.data); 
+                    // System.out.println("Before you do an evaluation");
                     int value = eval(m.pm.path.get(m.pm.path.size() - 1), m.adv1.path.get(m.adv1.path.size() - 1), m.adv2.path.get(m.adv2.path.size() - 1), grid, esc);
-                    // System.out.println(random);
-                    m.setData(value);
+                    // System.out.println(value);
+                    m.setData(m.data + value);
                     this.insertNode(n, m);
                     createTree(m, depth - 1, m.pm.path.get(m.pm.path.size() - 1), m.adv1.path.get(m.adv1.path.size() - 1), m.adv2.path.get(m.pm.path.size() - 1), grid, esc);
                     // m.displayNode(m); 
@@ -570,25 +561,39 @@ public class MiniMax implements PacAction {
     {
         PacCell[][] grid = (PacCell[][]) state;
         PacmanCell pc = PacUtils.findPacman(grid);
+        PacFace face;
+
+
         if (pc == null)
             return null;
         List<Point> esc = new ArrayList<Point>(); 
         esc = getEscapePoints(grid);
         // System.out.println(esc);
         Point plocation = new Point(); 
-        plocation.setLocation((int)pc.getX(), (int)pc.getY()); 
+        plocation.setLocation((int)pc.getX(), (int)pc.getY());
+        // System.out.println(plocation);  
         Tree t = new Tree();
         List<Point> advs = PacUtils.findGhosts(grid);  
         Point w = advs.get(0);
+        // System.out.println("This is w: " + w);
         Point x = advs.get(1); 
+        // System.out.println("this is x: " + x); 
         t.createTree(t.root, depth, plocation, w, x, grid, esc);
 
         t.printTree(t.root);
         int alpha = Integer.MIN_VALUE, beta = Integer.MAX_VALUE;
         t.alphaBeta(t.root, depth * 2, alpha, beta, false); 
-        Point next = t.root.pm.path.get(0);
-        PacFace face = PacUtils.direction(pc.getLoc(), next);
-
+        // System.out.println("This is the value returned from ab: " + t.root.data); 
+        if(t.root.pm.path.size() >= 1)
+        {
+        	Point next = t.root.pm.path.get(0);
+        	face = PacUtils.direction(pc.getLoc(), next);
+        }
+        else
+        {
+        	Point next = new Point(pc.getX(), pc.getY()); 
+        	face = PacUtils.direction(pc.getLoc(), next);
+        }
         return face;
     }
 }
