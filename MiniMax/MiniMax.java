@@ -15,6 +15,7 @@ import pacsim.PacmanCell;
 import pacsim.WallCell;
 import pacsim.HouseCell;
 import pacsim.GhostCell;
+import pacsim.PacMode; 
 
 class Path
 {
@@ -323,7 +324,71 @@ class Tree
         return a;
     }
 
-    public void createTree(Node root, int depth, Point plocation, Point adv1location, Point adv2location, PacCell[][] grid)
+    private static int eval(Point pm, Point adv1, Point adv2, PacCell[][] grid, List<Point> esc)
+    {
+    	int d1 = Integer.MAX_VALUE, d2 = Integer.MAX_VALUE, value = 0;
+    	int dist1 = PacUtils.manhattanDistance(pm, adv1);
+    	int dist2 = PacUtils.manhattanDistance(pm, adv2);
+        int distFromEscapePoint = Integer.MAX_VALUE;
+        int distance;
+        int idxpm = 0, idxadv1 = 0, idxadv2 = 0;
+
+        for(int i = 0; i < esc.size(); i++)
+        {
+            distance = PacUtils.manhattanDistance(pm, esc.get(i)); 
+            if(distance < distFromEscapePoint)
+            {
+                distFromEscapePoint = distance;
+                idxpm = i;
+            }
+        }
+
+        for(int i = 0; i < esc.size(); i++)
+        {
+            distance = PacUtils.manhattanDistance(adv1, esc.get(i)); 
+            if(distance < d1)
+            {
+                d1 = distance;
+                idxadv1 = i;
+            }
+        }
+        // System.out.println("d1 is this: " + d1);
+
+        for(int i = 0; i < esc.size(); i++)
+        {
+            distance = PacUtils.manhattanDistance(adv2, esc.get(i)); 
+            if(distance < d2)
+            {
+                d2 = distance;
+                idxadv2 = i;
+            }
+        }
+
+        // System.out.println("d2 is this: " + d2);
+
+    	List<Point> food = PacUtils.findFood(grid); 
+    	if(food.contains(pm))
+    	{
+    		value += 1; 
+    	}
+
+    	if(dist1 < 3 || dist2 < 3) {
+    		value = -1;
+    	} else if((dist1 < (2*distFromEscapePoint) + 1 && dist1 > 2 && idxpm == idxadv1) || (dist2 < (2*distFromEscapePoint) + 1 && dist2 > 2 && idxpm == idxadv2)){
+            value += 3;
+        } else if(((dist1 == (2*distFromEscapePoint) + 2) && idxpm == idxadv1) 
+            || ((dist1 == (2*distFromEscapePoint) + 1) && idxpm == idxadv1) 
+            || ((dist2 == (2*distFromEscapePoint) + 2) && idxpm == idxadv2) 
+            || ((dist2 == (2*distFromEscapePoint) + 1) && idxadv2 == idxpm)) {
+            value += 5;
+        } else {
+            value += 10;
+        }
+
+    	return value;
+    }
+
+    public void createTree(Node root, int depth, Point plocation, Point adv1location, Point adv2location, PacCell[][] grid, List<Point> esc) 
     {
         if(depth == 0)
             return;
@@ -371,11 +436,11 @@ class Tree
 
                     m.adv1.path.add(adv1Move);
                     m.adv2.path.add(adv2Move);
-                    int random = (int)(Math.random() * 10) + 1;
+                    int value = eval(m.pm.path.get(m.pm.path.size() - 1), m.adv1.path.get(m.adv1.path.size() - 1), m.adv2.path.get(m.adv2.path.size() - 1), grid, esc);
                     // System.out.println(random);
-                    m.setData(random);
+                    m.setData(value);
                     this.insertNode(n, m);
-                    createTree(m, depth - 1, m.pm.path.get(m.pm.path.size() - 1), m.adv1.path.get(m.adv1.path.size() - 1), m.adv2.path.get(m.pm.path.size() - 1), grid);
+                    createTree(m, depth - 1, m.pm.path.get(m.pm.path.size() - 1), m.adv1.path.get(m.adv1.path.size() - 1), m.adv2.path.get(m.pm.path.size() - 1), grid, esc);
                     // m.displayNode(m); 
                     // System.out.println("This is m.pm.path that it has: " + m.pm.path); 
                 }
@@ -418,6 +483,8 @@ public class MiniMax implements PacAction {
         System.out.println("\n    Game board   : " + fname);
 
         System.out.println("    Search depth : " + depth + "\n");
+        /*for(PacMode c : PacMode.values())
+            System.out.println(c);*/
 
         if (te > 0)
         {
@@ -426,6 +493,70 @@ public class MiniMax implements PacAction {
             + "\n   Max move limit : " + ml
             + "\n\nPreliminary run results :\n");
         }
+    }
+
+    public static List<Point> getEscapePoints(PacCell[][] grid)
+    {
+    	List<Point> esc = new ArrayList<Point>(); 
+    	int count, grix, griy;
+    	for(int i = 0; i < grid.length; i++)
+    	{
+    		for(int j = 0; j < grid[i].length; j++)
+    		{
+    			if(!(grid[i][j] instanceof WallCell) && !(grid[i][j] instanceof HouseCell))
+                {
+                    Point p = new Point((int)grid[i][j].getX(), (int)grid[i][j].getY()); 
+                    // System.out.println("this is p: " + p);
+        			count = 0;
+        			Point down = new Point((int)grid[i][j].getX(), (int)grid[i][j].getY() + 1);
+    		        grix = (int)down.getX();
+                    // System.out.println("This is grix: " + grix);
+    		        griy = (int)down.getY();
+                    // System.out.println("This is griy: " + griy);
+    		        if(grix > 0 && griy > 0 && grix < grid.length && griy < grid[i].length)
+                    {
+                        if(!(grid[grix][griy] instanceof WallCell) && !(grid[grix][griy] instanceof GhostCell) && !(grid[grix][griy] instanceof HouseCell))
+                            count++;
+                    }
+    		        
+    		        Point up = new Point((int)grid[i][j].getX(), (int)grid[i][j].getY() - 1);
+    		        grix = (int)up.getX();
+    		        griy = (int)up.getY();
+    		        if(grix > 0 && griy > 0 && grix < grid.length && griy < grid[i].length)
+                    {
+                        if(!(grid[grix][griy] instanceof WallCell) && !(grid[grix][griy] instanceof GhostCell) && !(grid[grix][griy] instanceof HouseCell))
+                            count++;
+                    }
+                        
+    		        
+    		        Point right = new Point((int)grid[i][j].getX() + 1, (int)grid[i][j].getY());
+    		        grix = (int)right.getX();
+    		        griy = (int)right.getY();
+    		        if(grix > 0 && griy > 0 && grix < grid.length && griy < grid[i].length)
+                    {
+                        if(!(grid[grix][griy] instanceof WallCell) && !(grid[grix][griy] instanceof GhostCell) && !(grid[grix][griy] instanceof HouseCell))  
+    		              count++;
+                    }
+    		        
+    		        Point left = new Point((int)grid[i][j].getX() - 1, (int)grid[i][j].getY());
+    		        grix = (int)left.getX();
+    		        griy = (int)left.getY();
+    		        if(grix > 0 && griy > 0 && grix < grid.length && griy < grid[i].length)
+                    {
+                        if(!(grid[grix][griy] instanceof WallCell) && !(grid[grix][griy] instanceof GhostCell) && !(grid[grix][griy] instanceof HouseCell))  
+                            count++;
+                    }
+                    
+
+    		        if(count > 2)
+    		        {
+    		        	esc.add(p);
+    		        }
+                }
+        	}
+    	}
+
+    	return esc;
     }
 
     @Override
@@ -439,20 +570,22 @@ public class MiniMax implements PacAction {
     {
         PacCell[][] grid = (PacCell[][]) state;
         PacmanCell pc = PacUtils.findPacman(grid);
-        Point plocation = new Point(); 
-        plocation.setLocation((int)pc.getX(), (int)pc.getY()); 
         if (pc == null)
             return null;
-        // System.out.println("This is depth at the beginning of the program: " + depth); 
+        List<Point> esc = new ArrayList<Point>(); 
+        esc = getEscapePoints(grid);
+        // System.out.println(esc);
+        Point plocation = new Point(); 
+        plocation.setLocation((int)pc.getX(), (int)pc.getY()); 
         Tree t = new Tree();
         List<Point> advs = PacUtils.findGhosts(grid);  
         Point w = advs.get(0);
         Point x = advs.get(1); 
-        t.createTree(t.root, depth, plocation, w, x, grid);
+        t.createTree(t.root, depth, plocation, w, x, grid, esc);
 
         t.printTree(t.root);
         int alpha = Integer.MIN_VALUE, beta = Integer.MAX_VALUE;
-        t.alphaBeta(t.root, depth * 2, alpha, beta, true); 
+        t.alphaBeta(t.root, depth * 2, alpha, beta, false); 
         Point next = t.root.pm.path.get(0);
         PacFace face = PacUtils.direction(pc.getLoc(), next);
 
