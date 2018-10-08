@@ -1,4 +1,3 @@
-// create path func to find distances from PacMan to all Ghosts
 import java.util.ArrayList; 
 import java.util.List;
 import java.awt.Point;
@@ -41,6 +40,7 @@ class Path
 class Node 
 {
 	List<Node> children;
+    // contain a Path variable for PacMan, Inky, and Blinky
     Path pm;
     Path adv1;
     Path adv2;
@@ -74,6 +74,7 @@ class Node
     }
 }
 
+// class designated for PacMan assignments
 class Pman {
     int numPossibilites;
     List<Point> possibleMoves;
@@ -106,6 +107,7 @@ class Pman {
 
 }
 
+// class designed for Ghost assignments
 class Adversary 
 {
     int numPossibilites;
@@ -138,6 +140,9 @@ class Adversary
     }
 }
 
+// class to hold the tree structure that will be conducted MiniMax on
+// THIS IS THE CLASS WHERE THE EVALUATION FUNCTION AND COMMENT BLOCK ARE 
+// LOCATED
 class Tree
 {
 	Node root;
@@ -174,6 +179,10 @@ class Tree
         }           
     }
 
+    // Method prunes tree permutations when future return values cannot impact a player's
+	// decision making process because the standard for elimination (min or max) has already been derived.
+	// initial call to alphaBeta has alpha set to Integer.MIN_VALUE and beta set
+	// to Integer.MAX_VALUE
     public Node alphaBeta(Node n, int depth, int alpha, int beta, boolean max)
     {
         int value; 
@@ -237,6 +246,9 @@ class Tree
         }
     }
 
+    // find all possible moves that PacMan can make. This is based on
+    // the cartesian coordinates that surround PacMan. If instance of 
+    // WallCell, GhostCell, or HouseCell, you cannot go in that direction.
     public static Pman getPManMoves(Point pc, PacCell[][] grid)
     {
         Pman p = new Pman(); 
@@ -245,6 +257,7 @@ class Tree
         int grix; 
         int griy; 
         
+        // Directing PacMan to which directions are available to choose going forward:
         Point down = new Point((int)pmanlocation.getX(), (int)pmanlocation.getY() + 1);
         grix = (int)down.getX();
         griy = (int)down.getY();
@@ -269,6 +282,9 @@ class Tree
         if(!(grid[grix][griy] instanceof WallCell) && !(grid[grix][griy] instanceof GhostCell) && !(grid[grix][griy] instanceof HouseCell))   
             directions.add(left);
 
+
+        // Once the available N,S,E,W directions have been determined,
+		// return the number of possibilities for future reference pull
         int x = 0;
         for(int i = 0; i < directions.size(); i++)
         {
@@ -280,6 +296,10 @@ class Tree
         return p;
     }
 
+
+    // find all possible moves that a Ghost can make. This is based on
+    // the cartesian coordinates that surround the Ghost. If instance of 
+    // WallCell, the ghost cannot go in that direction.
     public static Adversary getAdversaryMoves(Point adv, PacCell[][] grid)
     {
         Adversary a = new Adversary(); 
@@ -289,6 +309,7 @@ class Tree
         int griy;
 
 
+        // Directing Adversary to which directions are available to choose going forward:
         Point down = new Point((int)advLocation.getX(), (int)advLocation.getY() + 1);
         grix = (int)down.getX();
         griy = (int)down.getY();
@@ -313,6 +334,8 @@ class Tree
         if(!(grid[grix][griy] instanceof WallCell))
             directions.add(left);
         
+        // Once the available N,S,E,W directions have been determined,
+		// return the number of possibilities for future reference pull
         int x = 0;
         for(int i = 0; i < directions.size(); i++)
         {
@@ -324,6 +347,15 @@ class Tree
         return a;
     }
 
+    /*
+		THIS IS THE COMMENT BLOCK!
+		Create a ranking of value states for PacMan's possible directions,
+		giving incentive to follow food dots and avoid going towards ghosts. This function takes in
+		the current points of all three characters, the current grid, and the possible escape
+		points that exist on the board. An escape point is classified as a Point on the grid
+		where there exists three or more possible paths to take from that point. Anything that has
+		two or fewer possible moves possible is a tunnel or a dead end. 
+    */
     private static int eval(Point pm, Point adv1, Point adv2, PacCell[][] grid, List<Point> esc)
     {
     	int d1 = Integer.MAX_VALUE, d2 = Integer.MAX_VALUE, value = 0;
@@ -344,7 +376,8 @@ class Tree
     	}
 
 
-
+    	// proximity of ghost case value states to return decreasing levels
+		// of value for PacMan to choose his next distance.
     	if(dist1 < 3 || dist2 < 3) {
     		value = -1;
     	} else if((dist1 < 5 && dist1 > 2) || (dist2 < 5 && dist2 > 2)){
@@ -358,6 +391,7 @@ class Tree
     	return value;
     }
 
+    // Find the nearest food element
     public int closestFood(PacCell grid[][], Point pm)
     {
     	List<Point> food = PacUtils.findFood(grid);
@@ -375,6 +409,9 @@ class Tree
     	return value;
     }
 
+    // Generate all the possible moves
+	// for character states. Allows PacMan to look ahead and take pre-emptive actions
+	// to find optimal value states based on depth passed in through command line.
     public void createTree(Node root, int depth, Point plocation, Point adv1location, Point adv2location, PacCell[][] grid, List<Point> esc) 
     {
         if(depth == 0)
@@ -390,7 +427,7 @@ class Tree
         for(i = 0; i < size; i++)
         {
             Point point = p.possibleMoves.get(i);
-            // int nrandom = (int)(Math.random() * 10) + 1; 
+            // create new node to represent PacMan's node
             Node n = new Node(); 
             if(root != this.root)
             {
@@ -401,11 +438,10 @@ class Tree
                     n.adv2.path.add(root.adv2.path.get(l)); 
                 }
             }
-            // System.out.println("This is n.pm.path before addPoint(): " + n.pm.path);
+            
             n.pm.addPoint(point);
             n.setData(root.data + closestFood(grid, point)); 
-            // System.out.println("This is n.data" + n.data);
-            // System.out.println("This is n.pm.path after addPoint(): " + n.pm.path);
+            
             this.insertNode(root, n);
             Adversary adv1 = new Adversary();
             adv1 = getAdversaryMoves(adv1location, grid);
@@ -418,6 +454,8 @@ class Tree
                 {
                     Point adv1Move = adv1.possibleMoves.get(j);
                     Point adv2Move = adv2.possibleMoves.get(k);
+                    // create a node m to represent both Ghosts 
+                    // moving
                     Node m = new Node();
                     m.pm.path = n.pm.path;
                     m.adv1.path = n.adv1.path;
@@ -426,14 +464,13 @@ class Tree
                     m.adv1.path.add(adv1Move);
                     m.adv2.path.add(adv2Move);
                     m.setData(n.data); 
-                    // System.out.println("Before you do an evaluation");
+                    
                     int value = eval(m.pm.path.get(m.pm.path.size() - 1), m.adv1.path.get(m.adv1.path.size() - 1), m.adv2.path.get(m.adv2.path.size() - 1), grid, esc);
-                    // System.out.println(value);
+                    
                     m.setData(m.data + value);
                     this.insertNode(n, m);
                     createTree(m, depth - 1, m.pm.path.get(m.pm.path.size() - 1), m.adv1.path.get(m.adv1.path.size() - 1), m.adv2.path.get(m.pm.path.size() - 1), grid, esc);
-                    // m.displayNode(m); 
-                    // System.out.println("This is m.pm.path that it has: " + m.pm.path); 
+                    
                 }
             }
         }
@@ -486,6 +523,10 @@ public class MiniMax implements PacAction {
         }
     }
 
+    // Method to direct PacMan to the intersection points that have a greater
+	// number of possible directions for PacMan to choose than there are ghost
+	// so he can avoid being trapped. Also allows him to identify when he is
+	// stuck in a tunnel and may need to evacuate, depending on ghost proximity.
     public static List<Point> getEscapePoints(PacCell[][] grid)
     {
     	List<Point> esc = new ArrayList<Point>(); 
@@ -497,13 +538,13 @@ public class MiniMax implements PacAction {
     			if(!(grid[i][j] instanceof WallCell) && !(grid[i][j] instanceof HouseCell))
                 {
                     Point p = new Point((int)grid[i][j].getX(), (int)grid[i][j].getY()); 
-                    // System.out.println("this is p: " + p);
+                    
         			count = 0;
         			Point down = new Point((int)grid[i][j].getX(), (int)grid[i][j].getY() + 1);
     		        grix = (int)down.getX();
-                    // System.out.println("This is grix: " + grix);
+                    
     		        griy = (int)down.getY();
-                    // System.out.println("This is griy: " + griy);
+                    
     		        if(grix > 0 && griy > 0 && grix < grid.length && griy < grid[i].length)
                     {
                         if(!(grid[grix][griy] instanceof WallCell) && !(grid[grix][griy] instanceof GhostCell) && !(grid[grix][griy] instanceof HouseCell))
@@ -556,6 +597,7 @@ public class MiniMax implements PacAction {
 
     }
 
+    // Action method to describe what PacMan does
     @Override
     public PacFace action(Object state)
     {
@@ -568,22 +610,22 @@ public class MiniMax implements PacAction {
             return null;
         List<Point> esc = new ArrayList<Point>(); 
         esc = getEscapePoints(grid);
-        // System.out.println(esc);
+        
         Point plocation = new Point(); 
         plocation.setLocation((int)pc.getX(), (int)pc.getY());
-        // System.out.println(plocation);  
+        
         Tree t = new Tree();
         List<Point> advs = PacUtils.findGhosts(grid);  
         Point w = advs.get(0);
-        // System.out.println("This is w: " + w);
+        
         Point x = advs.get(1); 
-        // System.out.println("this is x: " + x); 
+        
         t.createTree(t.root, depth, plocation, w, x, grid, esc);
 
         t.printTree(t.root);
         int alpha = Integer.MIN_VALUE, beta = Integer.MAX_VALUE;
         t.alphaBeta(t.root, depth * 2, alpha, beta, false); 
-        // System.out.println("This is the value returned from ab: " + t.root.data); 
+        
         if(t.root.pm.path.size() >= 1)
         {
         	Point next = t.root.pm.path.get(0);
