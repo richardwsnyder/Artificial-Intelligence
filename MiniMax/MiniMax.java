@@ -1,3 +1,8 @@
+/*
+ * University of Central Florida
+ * CAP4630 - Fall 2018
+ * Authors: Richard Snyder and Jimmy Seeber
+*/
 import java.util.ArrayList; 
 import java.util.List;
 import java.awt.Point;
