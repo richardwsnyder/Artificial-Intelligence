@@ -41,10 +41,10 @@ move(putdown(X), [holding(X), room(Z)],
 move(stack(X, Y), [holding(X), clear(Y), room(Z)], 
 				  [del(holding(X)), del(clear(Y)), add(handempty), add(on(X, Y, Z)), add(clear(X))]). 
 
-move(goroom1, [room(2)],
-			  [del(room(2)), add(room(2))]).
+move(goroom(1), [room(2)],
+			  [del(room(2)), add(room(1))]).
 
-move(goroom2, [room(1)], 
+move(goroom(2), [room(1)], 
 			  [del(room(1)), add(room(2))]). 
 
 /*commands*/
@@ -54,5 +54,5 @@ go(S, G) :- plan(S, G, [S], []).
 test :- go([handempty, ontable(b, 1), ontable(c, 1), on(a, b, 1), clear(c), clear(a), room(1)],
 	          [handempty, ontable(c, 1), on(b, c, 1), on(a, b, 1), clear(a), room(1)]).
 
-test2 :- go([handempty, ontable(b, 1), ontable(c, 1), on(a, b, 1), clear(c), clear(a)],
-	          [handempty, ontable(b, 2), on(c, b, 2), on(a, c, 2), clear(a)]).
+test2 :- go([handempty, ontable(b, 1), ontable(c, 1), on(a, b, 1), clear(c), clear(a), room(1)],
+	          [handempty, ontable(b, 2), on(c, b, 2), on(a, c, 2), clear(a), room(2)]).
