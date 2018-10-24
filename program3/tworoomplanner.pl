@@ -41,10 +41,10 @@ move(putdown(X), [holding(X), room(Z)],
 move(stack(X, Y), [holding(X), clear(Y), room(Z)], 
 				  [del(holding(X)), del(clear(Y)), add(handempty), add(on(X, Y, Z)), add(clear(X))]). 
 
-move(goroom(1), [room(2)],
+move(goroom1, [room(2)],
 			  [del(room(2)), add(room(1))]).
 
-move(goroom(2), [room(1)], 
+move(goroom2, [room(1)], 
 			  [del(room(1)), add(room(2))]). 
 
 /*commands*/
