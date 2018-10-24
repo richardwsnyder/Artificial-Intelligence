@@ -29,34 +29,30 @@ member_state(S, [H|_]) :-	equal_set(S, H).
 member_state(S, [_|T]) :-	member_state(S, T).
 
 /*moves*/
+move(pickup(X), [handempty, clear(X), on(X, Y, Z), room(Z)], 
+				[del(handempty), del(clear(X)), del(on(X, Y, Z)), add(clear(Y)), add(holding(X))]).
 
-move(pickup(X, Z), [room(Z), handempty, clear(X), onstack(X, Y, Z)],
-		[del(handempty), del(clear(X)), del(ontable(X, Y, Z)),
-				 add(clear(Y)),	add(holding(X))]).
+move(pickup(X), [handempty, clear(X), ontable(X, Z), room(Z)],
+				[del(handempty), del(clear(X)), del(ontable(X, Z)), add(holding(X))]). 
 
-move(pickup(X, Z), [room(Z), handempty, clear(X), ontable(X, Z)],
-		[del(handempty), del(clear(X)), del(ontable(X, Z)),
-				 add(holding(X))]).
+move(putdown(X), [holding(X), room(Z)], 
+					[del(holding(X)), add(ontable(X, Z)), add(clear(X)), add(handempty)]).
 
-move(putontable(X, Z), [room(Z), holding(X)],
-		[del(holding(X)), add(ontable(X, Z)), add(clear(X)),
-				  add(handempty)]).
+move(stack(X, Y), [holding(X), clear(Y), room(Z)], 
+				  [del(holding(X)), del(clear(Y)), add(handempty), add(on(X, Y, Z)), add(clear(X))]). 
 
-move(putonstack(X, Y, Z), [room(Z), holding(X), clear(Y)],
-		[del(holding(X)), del(clear(Y)), add(handempty), add(on(X, Y, Z)),
-				  add(clear(X))]).
+move(goroom1, [room(2)],
+			  [del(room(2)), add(room(2))]).
 
-move(changeroom(1), [room(2)], [del(room(2)), add(room(1))]).
-
-move(changeroom(2), [room(1)], [del(room(1)), add(room(2))]). 
-
+move(goroom2, [room(1)], 
+			  [del(room(1)), add(room(2))]). 
 
 /*commands*/
 
 go(S, G) :- plan(S, G, [S], []).
 
-test :- go([handempty, ontable(b, 1), ontable(c, 1), onstack(a, b, 1), clear(c), clear(a)],
-	          [handempty, ontable(c, 1), onstack(a,b,1), onstack(b, c, 1), clear(a)]).
+test :- go([handempty, ontable(b, 1), ontable(c, 1), on(a, b, 1), clear(c), clear(a), room(1)],
+	          [handempty, ontable(c, 1), on(b, c, 1), on(a, b, 1), clear(a), room(1)]).
 
-test2 :- go([handempty, ontable(b, 1), ontable(c, 1), onstack(a, b, 1), clear(c), clear(a)],
-	          [handempty, ontable(b, 2), onstack(c, b, 2), onstack(a, c, 2), clear(a)]).
+test2 :- go([handempty, ontable(b, 1), ontable(c, 1), on(a, b, 1), clear(c), clear(a)],
+	          [handempty, ontable(b, 2), on(c, b, 2), on(a, c, 2), clear(a)]).

@@ -91,7 +91,7 @@ move(stack(X, Y), [holding(X), clear(Y)],
 
 /* run commands */
 % Planner: Launching and Testing:
-go(S, G) :- plans(S, G, [S], []).
+go(S, G) :- plan(S, G, [S], []).
 
 test :- go([handempty, ontable(b), ontable(c), on(a, b), clear(c), clear(a)],
             [handempty, ontable(c), on(a, b), on(b, c), clear(a) ]).
