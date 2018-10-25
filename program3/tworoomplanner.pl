@@ -1,7 +1,21 @@
+%%%%%%%%% Two-Room Blocks World Planner %%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%
+%%% Based on the single-room planner provided in
+%%%
+%%% CAP 4630
+%%% Artificial Intelligence:
+%%%
+%%% Richard Snyder and Jimmy Seeber
+%%% FALL 2018
+%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
 :- module( planner,
 	   [
 	       plan/4,change_state/3,conditions_met/2,member_state/2,
-	       move/3,go/2,test/0,test2/0
+	       move/3,go/2,test1/0,test2/0
 	   ]).
 
 :- [utils].
@@ -28,31 +42,31 @@ conditions_met(P, S) :- subset(P, S).
 member_state(S, [H|_]) :-	equal_set(S, H).
 member_state(S, [_|T]) :-	member_state(S, T).
 
-/*moves*/
-move(pickup(X), [handempty, clear(X), on(X, Y, Z), room(Z)], 
-				[del(handempty), del(clear(X)), del(on(X, Y, Z)), add(clear(Y)), add(holding(X))]).
+% moves
 
-move(pickup(X), [handempty, clear(X), ontable(X, Z), room(Z)],
-				[del(handempty), del(clear(X)), del(ontable(X, Z)), add(holding(X))]). 
+move(pickup(X), [handempty, handroom(Z), clear(X), inroom(X, Z), on(X, Y)], 
+				[del(handempty), del(clear(X)), del(on(X, Y)), del(inroom(X, Z)), add(clear(Y)), add(holding(X))]).
 
-move(putdown(X), [holding(X), room(Z)], 
-					[del(holding(X)), add(ontable(X, Z)), add(clear(X)), add(handempty)]).
+move(pickup(X), [handempty, handroom(Z), clear(X), inroom(X, Z), ontable(X)], 
+				[del(handempty), del(clear(X)), del(ontable(X)), del(inroom(X, Z)), add(holding(X))]). 
 
-move(stack(X, Y), [holding(X), clear(Y), room(Z)], 
-				  [del(holding(X)), del(clear(Y)), add(handempty), add(on(X, Y, Z)), add(clear(X))]). 
+move(putdown(X), [holding(X), handroom(Z)], 
+				 [del(holding(X)), add(inroom(X, Z)), add(ontable(X)), add(clear(X)), add(handempty)]). 
 
-move(goroom1, [room(2)],
-			  [del(room(2)), add(room(1))]).
+move(stack(X, Y), [holding(X), handroom(Z), clear(Y), inroom(Y, Z)], 
+				  [del(holding(X)), del(clear(Y)), add(handempty), add(on(X, Y)), add(clear(X)), add(inroom(X, Z))]). 
 
-move(goroom2, [room(1)], 
-			  [del(room(1)), add(room(2))]). 
+move(goroom1, [handroom(2)], 
+			  [del(handroom(2)), add(handroom(1))]). 
 
-/*commands*/
+move(goroom2, [handroom(1)], 
+			  [del(handroom(1)), add(handroom(2))]). 
 
-go(S, G) :- plan(S, G, [S], []).
+go(S, G) :- plan(S, G, [S], []). 
 
-test :- go([handempty, ontable(b, 1), ontable(c, 1), on(a, b, 1), clear(c), clear(a), room(1)],
-	          [handempty, ontable(c, 1), on(b, c, 1), on(a, b, 1), clear(a), room(1)]).
+test1 :- go([handempty, handroom(1), inroom(a, 1), inroom(b, 1), inroom(c, 1), ontable(b), ontable(c), on(a, b), clear(c), clear(a)],
+			[handempty, handroom(1), inroom(a, 1), inroom(b, 1), inroom(c, 1), ontable(c), on(b, c), on(a, b), clear(a)]). 
 
-test2 :- go([handempty, ontable(b, 1), ontable(c, 1), on(a, b, 1), clear(c), clear(a), room(1)],
-	          [handempty, ontable(b, 2), on(c, b, 2), on(a, c, 2), clear(a), room(2)]).
+test2 :- go([handempty, handroom(1), inroom(a, 1), inroom(b, 1), inroom(c, 1), ontable(b), ontable(c), on(a, b), clear(c), clear(a)], 
+			[handempty, handroom(1), inroom(a, 2), inroom(b, 2), inroom(c, 2), ontable(b), on(c, b), on(a, c), clear(a)]). 
+
