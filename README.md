@@ -1,2 +1,2 @@
 # Artificial-Intelligence
-CAP 4630\nArtificial Intelligence at the University of Central Florida
+CAP 4630 Artificial Intelligence at the University of Central Florida
